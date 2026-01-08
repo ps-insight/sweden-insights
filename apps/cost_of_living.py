@@ -211,13 +211,31 @@ def render():
         top_weights = get_top_categories_by_weight(df_all, top_n=5)
         
         if not top_weights.empty:
+            # Calculate color intensity based on weight (darker for higher weights)
+            max_weight = top_weights['Weights'].max()
+            min_weight = top_weights['Weights'].min()
+            
             for idx, row in top_weights.iterrows():
                 with st.container():
+                    # Calculate color intensity (0.4 to 1.0 range for better visibility)
+                    if max_weight > min_weight:
+                        intensity = 0.4 + 0.6 * ((row['Weights'] - min_weight) / (max_weight - min_weight))
+                    else:
+                        intensity = 1.0
+                    
+                    # Blue gradient - darker for higher weights
+                    border_color = f"rgba(31, 119, 180, {intensity})"
+                    text_color = f"rgba(31, 119, 180, {intensity})"
+                    value_color = f"rgba(31, 119, 180, {min(intensity + 0.2, 1.0)})"
+                    
                     st.markdown(
                         f"""
-                        <div style="background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; border-left: 4px solid #1f77b4;">
-                            <div style="font-weight: 600; font-size: 1rem; color: #1f77b4;">{row['Product group_label']}</div>
-                            <div style="font-size: 1.5rem; font-weight: 700; color: #333;">{row['Weights']:.2f}%</div>
+                        <div style="background: linear-gradient(135deg, rgba(239, 246, 255, 0.8) 0%, rgba(219, 234, 254, 0.6) 100%); 
+                                    padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; 
+                                    border-left: 4px solid {border_color};
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-weight: 600; font-size: 1rem; color: {text_color};">{row['Product group_label']}</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: {value_color};">{row['Weights']:.2f}%</div>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -230,17 +248,43 @@ def render():
         top_drivers = get_top_inflation_drivers(df_all, top_n=5)
         
         if not top_drivers.empty:
+            # Calculate color intensity based on absolute contribution
+            max_contrib = top_drivers['Contribution'].abs().max()
+            
             for idx, row in top_drivers.iterrows():
                 with st.container():
-                    contribution_color = "#d62728" if row['Contribution'] > 0 else "#2ca02c"
+                    # Determine if positive or negative contribution
+                    is_positive = row['Contribution'] > 0
+                    
+                    # Calculate intensity based on absolute value (0.4 to 1.0 range)
+                    if max_contrib > 0:
+                        intensity = 0.4 + 0.6 * (abs(row['Contribution']) / max_contrib)
+                    else:
+                        intensity = 1.0
+                    
+                    # Red for positive (inflation), Green for negative (deflation)
+                    if is_positive:
+                        border_color = f"rgba(220, 38, 38, {intensity})"  # Red
+                        text_color = f"rgba(220, 38, 38, {intensity})"
+                        value_color = f"rgba(220, 38, 38, {min(intensity + 0.2, 1.0)})"
+                        bg_gradient = "linear-gradient(135deg, rgba(254, 242, 242, 0.8) 0%, rgba(254, 226, 226, 0.6) 100%)"
+                    else:
+                        border_color = f"rgba(22, 163, 74, {intensity})"  # Green
+                        text_color = f"rgba(22, 163, 74, {intensity})"
+                        value_color = f"rgba(22, 163, 74, {min(intensity + 0.2, 1.0)})"
+                        bg_gradient = "linear-gradient(135deg, rgba(240, 253, 244, 0.8) 0%, rgba(220, 252, 231, 0.6) 100%)"
+                    
                     st.markdown(
                         f"""
-                        <div style="background-color: #f0f2f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; border-left: 4px solid {contribution_color};">
-                            <div style="font-weight: 600; font-size: 1rem; color: #1f77b4;">{row['Product group_label']}</div>
-                            <div style="font-size: 1.5rem; font-weight: 700; color: {contribution_color};">
+                        <div style="background: {bg_gradient}; 
+                                    padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem; 
+                                    border-left: 4px solid {border_color};
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                            <div style="font-weight: 600; font-size: 1rem; color: {text_color};">{row['Product group_label']}</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: {value_color};">
                                 {row['Contribution']:+.2f}%
                             </div>
-                            <div style="font-size: 0.85rem; color: #666; margin-top: 0.25rem;">
+                            <div style="font-size: 0.85rem; color: #64748b; margin-top: 0.25rem;">
                                 Annual: {row['Annual changes']:+.2f}% | Weight: {row['Weights']:.2f}%
                             </div>
                         </div>
@@ -290,7 +334,7 @@ def render():
                 title=f"Inflation Contribution: {', '.join(selected_groups)}"
             )
             if fig:
-                st.plotly_chart(fig, width='content')
+                st.plotly_chart(fig, width='stretch')
         else:
             st.info("ℹ️ No contribution data available. Weights data is required.")
         st.markdown("")  # Add spacing
@@ -312,7 +356,7 @@ def render():
                 title=f"Annual Changes by Product Group and Month"
             )
             if fig:
-                st.plotly_chart(fig, width='content')
+                st.plotly_chart(fig, width='stretch')
         else:
             st.info("ℹ️ No heatmap data available.")
         st.markdown("")  # Add spacing
@@ -346,7 +390,7 @@ def render():
                 title=f"Weight of {', '.join(selected_groups_weights)} over time"
             )
             if fig:
-                st.plotly_chart(fig, width='content')
+                st.plotly_chart(fig, width='stretch')
         else:
             st.info("ℹ️ No weights data available for selected product groups.")
     else:

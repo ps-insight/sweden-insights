@@ -308,6 +308,12 @@ def get_top_categories_by_weight(df: pd.DataFrame, top_n: int = 5) -> pd.DataFra
     # Filter to only rows with weights
     weights_data = df[df["Weights"].notna()].copy()
     
+    # Exclude TOTAL category
+    if "Product group_label" in weights_data.columns:
+        weights_data = weights_data[
+            ~weights_data["Product group_label"].str.upper().str.contains("TOTAL", na=False)
+        ]
+    
     if weights_data.empty:
         return pd.DataFrame()
     
@@ -355,6 +361,12 @@ def get_top_inflation_drivers(df: pd.DataFrame, top_n: int = 5) -> pd.DataFrame:
         (df["Annual changes"].notna()) &
         (df["Weights"].notna())
     ].copy()
+    
+    # Exclude TOTAL category
+    if "Product group_label" in driver_data.columns:
+        driver_data = driver_data[
+            ~driver_data["Product group_label"].str.upper().str.contains("TOTAL", na=False)
+        ]
     
     if driver_data.empty:
         return pd.DataFrame()
