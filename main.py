@@ -33,7 +33,7 @@ st.markdown(
 )
 
 st.markdown('<div class="main-header"><h1>Sweden Insights 🇸🇪</h1></div>', unsafe_allow_html=True)
-st.markdown('<div class="main-caption">Interactive dashboards exploring Swedish economic and demographic trends (Data from scb.se )</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-caption">Interactive dashboards exploring Swedish economic and demographic trends (Data from scb.se)</div>', unsafe_allow_html=True)
 
 # Enhanced navigation with styled cards
 st.markdown("""
